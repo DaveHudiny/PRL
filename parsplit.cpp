@@ -4,7 +4,7 @@
  * @brief Implementation of first project to PRL subject.
  * @version 1
  * @date 2023-03-24
- * 
+ *
  */
 
 #include <iostream>
@@ -15,41 +15,103 @@
 
 using namespace std;
 
-void root_process(unsigned array[])
+void print_array(int array[], int size)
 {
+    for (int i = 0; i < size; i++)
+    {
+        cout << array[i] << " ";
+    }
+}
+
+void medianize(int array[], int size, int median, int rank, int num_proc)
+{
+    int L[size], E[size], G[size];
+    int il = 0, ie = 0, ig = 0;
+
+    for (int i = 0; i < size; i++)
+    {
+        if (array[i] < m)
+        {
+            L[il] = array[i];
+            il++;
+        }
+        else if (array[i] == m)
+        {
+            E[ie] = array[i];
+            ie++;
+        }
+        else
+        {
+            E[ig] = array[i];
+            ig++;
+        }
+    }
+}
+
+void root_process(int num_proc)
+{
+    int array[MAXSIZE];
     unsigned char byte;
-    int i = 0;
-    FILE* file = fopen("numbers", "r");
-    if (file == NULL) {
+    int size_array = 0, i = 0;
+    int median;
+    int chunk;
+    FILE *file = fopen("numbers", "r");
+    if (file == NULL)
+    {
         printf("Nepovedlo se otevrit soubor\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
-    
-    while (fscanf(file, "%c", &byte) != EOF && i < 64) {
+
+    while (fscanf(file, "%c", &byte) != EOF && i < 64)
+    {
         array[i] = unsigned(byte);
-        cout << unsigned(byte) << endl;
+        cout << unsigned(byte) << " ";
         i++;
     }
     fclose(file);
+
+    size_array = i;
+    median = array[size_array % 2 == 0 ? (size_array / 2) - 1 : size_array / 2];
+    int buffer[size_array];
+
+    MPI_Bcast(&median, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&size_array, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(array, size_array / num_proc, MPI_INT, buffer, size_array / num_proc, MPI_INT, 0, MPI_COMM_WORLD);
+
+    cout << "Proces " << 0 << ": ";
+    print_array(buffer, size_array / num_proc);
+    cout << endl;
+}
+
+void non_root_process(int num_proc, int rank)
+{
+    int median = 0;
+    int array_size = 0;
+    int buffer[MAXSIZE];
+    MPI_Bcast(&median, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&array_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    MPI_Scatter(NULL, array_size / num_proc, MPI_INT, buffer, array_size / num_proc, MPI_INT, 0, MPI_COMM_WORLD);
+    cout << "Proces " << rank << ": ";
+    print_array(buffer, array_size / num_proc);
+    cout << endl;
 }
 
 int main(int argc, char **argv)
 {
-    int rank;
+    int rank, size;
     MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank == 0) {
-        int input_array[MAXSIZE];
-        root_process(input_array);
-        cout << "Ja jsem root!" << endl; 
+    if (rank == 0)
+    {
+        root_process(size);
     }
     else
     {
-        cout << "Ahoj!" << endl; 
-        
+        non_root_process(size, rank);
     }
 
     MPI_Finalize();
     return 0;
-    
 }
