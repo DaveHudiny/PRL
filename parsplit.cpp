@@ -95,18 +95,19 @@ void gather_segment(int rank, int num_proc, int segment[], int ix, int *result, 
         sizes = (int *)malloc(num_proc * sizeof(int));
     }
 
-    MPI_Gather(&ix, 1, MPI_INT, sizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gather(&ix, 1, MPI_INT, sizes, 1, MPI_INT, 0, MPI_COMM_WORLD); // Send all ixs to others, convert i to sizes for root
     if (rank == 0)
     {
-        offsets[0] = 0;
+        offsets[0] = 0; // Offset serves for describing, where starts each part of the next gatherv result array
         *result_size = sizes[0];
         for (int i = 1; i < num_proc; i++)
         {
             offsets[i] = *result_size;
             *result_size = *result_size + sizes[i];
-        }
+        } // Sizes 1 5 0 6 -> offsets 0 1 6 6
     }
 
+    // Everybody send results and root gathers all results from himself and his minions 
     MPI_Gatherv(segment, ix, MPI_INT, result, sizes, offsets, MPI_INT, 0, MPI_COMM_WORLD);
 }
 
@@ -177,13 +178,13 @@ void root_process(int num_proc)
     }
 
     while (fscanf(file, "%c", &byte) != EOF && size_array < MAXSIZE)
-    {
+    { // Loading input array from file
         array[size_array] = unsigned(byte);
         size_array++;
     }
     fclose(file);
 
-    median = array[size_array % 2 == 0 ? (size_array / 2) - 1 : size_array / 2];
+    median = array[size_array % 2 == 0 ? (size_array / 2) - 1 : size_array / 2]; // Pseudomedian
     int small_size = size_array / num_proc;
     int buffer[size_array];
 
@@ -192,14 +193,15 @@ void root_process(int num_proc)
     print_array(array, size_array);
     cout << endl;
 
-    MPI_Bcast(&median, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&median, 1, MPI_INT, 0, MPI_COMM_WORLD); // Broadcasting median and size of array to others
     MPI_Bcast(&size_array, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatter(array, small_size, MPI_INT, buffer, small_size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(array, small_size, MPI_INT, buffer, small_size, MPI_INT, 0, MPI_COMM_WORLD); 
+    // Send sub-arrays to others and take buffer with small_size
 
     int L[small_size], E[small_size], G[small_size];
     int il = 0, ie = 0, ig = 0;
-    medianize(buffer, small_size, median, L, E, G, &il, &ie, &ig);
-    concat_gather(0, num_proc, size_array, L, E, G, il, ie, ig);
+    medianize(buffer, small_size, median, L, E, G, &il, &ie, &ig); // Do your part of job
+    concat_gather(0, num_proc, size_array, L, E, G, il, ie, ig); // Gather all results
 }
 
 /**
