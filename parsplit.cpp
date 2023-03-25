@@ -15,6 +15,12 @@
 
 using namespace std;
 
+/**
+ * @brief 
+ * 
+ * @param array 
+ * @param size 
+ */
 void print_array(int array[], int size)
 {
     for (int i = 0; i < size; i++)
@@ -23,6 +29,15 @@ void print_array(int array[], int size)
     }
 }
 
+/**
+ * @brief 
+ * 
+ * @param array 
+ * @param size 
+ * @param median 
+ * @param rank 
+ * @param num_proc 
+ */
 void medianize(int array[], int size, int median, int rank, int num_proc)
 {
     int L[size], E[size], G[size];
@@ -30,24 +45,37 @@ void medianize(int array[], int size, int median, int rank, int num_proc)
 
     for (int i = 0; i < size; i++)
     {
-        if (array[i] < m)
+        if (array[i] < median)
         {
             L[il] = array[i];
             il++;
         }
-        else if (array[i] == m)
+        else if (array[i] == median)
         {
             E[ie] = array[i];
             ie++;
         }
         else
         {
-            E[ig] = array[i];
+            G[ig] = array[i];
             ig++;
         }
     }
+    /**
+    print_array(L, il); 
+    cout << " E:";
+    print_array(E, ie);
+    cout << " G: ";
+    print_array(G, ig);
+    cout << endl;
+    **/
 }
 
+/**
+ * @brief 
+ * 
+ * @param num_proc 
+ */
 void root_process(int num_proc)
 {
     int array[MAXSIZE];
@@ -65,7 +93,7 @@ void root_process(int num_proc)
     while (fscanf(file, "%c", &byte) != EOF && i < 64)
     {
         array[i] = unsigned(byte);
-        cout << unsigned(byte) << " ";
+        // cout << unsigned(byte) << " ";
         i++;
     }
     fclose(file);
@@ -80,9 +108,16 @@ void root_process(int num_proc)
 
     cout << "Proces " << 0 << ": ";
     print_array(buffer, size_array / num_proc);
-    cout << endl;
+    cout << " Median: " << median << endl;
+    medianize(buffer, size_array / num_proc, median, 0, num_proc);
 }
 
+/**
+ * @brief 
+ * 
+ * @param num_proc 
+ * @param rank 
+ */
 void non_root_process(int num_proc, int rank)
 {
     int median = 0;
@@ -95,8 +130,16 @@ void non_root_process(int num_proc, int rank)
     cout << "Proces " << rank << ": ";
     print_array(buffer, array_size / num_proc);
     cout << endl;
+    medianize(buffer, array_size / num_proc, median, 0, num_proc);
 }
 
+/**
+ * @brief 
+ * 
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char **argv)
 {
     int rank, size;
