@@ -15,12 +15,11 @@
 
 using namespace std;
 
-
 /**
- * @brief 
- * 
- * @param array 
- * @param size 
+ * @brief
+ *
+ * @param array
+ * @param size
  */
 void print_array(int array[], int size)
 {
@@ -31,13 +30,35 @@ void print_array(int array[], int size)
 }
 
 /**
- * @brief 
- * 
- * @param array 
- * @param size 
- * @param median 
- * @param rank 
- * @param num_proc 
+ * @brief
+ *
+ * @param L
+ * @param E
+ * @param G
+ * @param il
+ * @param ie
+ * @param ig
+ * @param rank
+ */
+void print_LEG(int L[], int E[], int G[], int il, int ie, int ig, int rank)
+{
+    cout << rank << " L: ";
+    print_array(L, il);
+    cout << " E:";
+    print_array(E, ie);
+    cout << " G: ";
+    print_array(G, ig);
+    cout << endl;
+}
+
+/**
+ * @brief
+ *
+ * @param array
+ * @param size
+ * @param median
+ * @param rank
+ * @param num_proc
  */
 void medianize(int array[], int size, int median, int rank, int num_proc)
 {
@@ -62,20 +83,13 @@ void medianize(int array[], int size, int median, int rank, int num_proc)
             ig++;
         }
     }
-    /**
-    print_array(L, il); 
-    cout << " E:";
-    print_array(E, ie);
-    cout << " G: ";
-    print_array(G, ig);
-    cout << endl;
-    **/
+    // print_LEG(L, E, G, il, ie, ig, rank);
 }
 
 /**
- * @brief 
- * 
- * @param num_proc 
+ * @brief
+ *
+ * @param num_proc
  */
 void root_process(int num_proc)
 {
@@ -114,10 +128,10 @@ void root_process(int num_proc)
 }
 
 /**
- * @brief 
- * 
- * @param num_proc 
- * @param rank 
+ * @brief
+ *
+ * @param num_proc
+ * @param rank
  */
 void non_root_process(int num_proc, int rank)
 {
@@ -131,15 +145,15 @@ void non_root_process(int num_proc, int rank)
     cout << "Proces " << rank << ": ";
     print_array(buffer, array_size / num_proc);
     cout << endl;
-    medianize(buffer, array_size / num_proc, median, 0, num_proc);
+    medianize(buffer, array_size / num_proc, median, rank, num_proc);
 }
 
 /**
- * @brief 
- * 
- * @param argc 
- * @param argv 
- * @return int 
+ * @brief
+ *
+ * @param argc
+ * @param argv
+ * @return int
  */
 int main(int argc, char **argv)
 {
