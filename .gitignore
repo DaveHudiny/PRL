@@ -1,4 +1,4 @@
-parsplit
+./parsplit
 
 # Prerequisites
 *.d
@@ -33,3 +33,5 @@ parsplit
 *.exe
 *.out
 *.app
+parsplit
+parsplit
