@@ -50,7 +50,7 @@ void print_LEG(int L[], int E[], int G[], int il, int ie, int ig, int rank)
  * @param L Array of values: lesser then median
  * @param E equal to median
  * @param G greater then median
- * @param il Pointer to size of array lesser then median 
+ * @param il Pointer to size of array lesser then median
  * @param ie equal to median
  * @param ig greater then median
  */
