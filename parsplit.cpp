@@ -109,6 +109,10 @@ void gather_segment(int rank, int num_proc, int segment[], int ix, int *result, 
 
     // Everybody send results and root gathers all results from himself and his minions 
     MPI_Gatherv(segment, ix, MPI_INT, result, sizes, offsets, MPI_INT, 0, MPI_COMM_WORLD);
+    if(rank == 0)
+    {
+        free(sizes);
+    }
 }
 
 /**
@@ -155,6 +159,12 @@ void concat_gather(int rank, int num_proc, int size, int L[], int E[], int G[], 
     print_res(rank, res, rie, "E");
     gather_segment(rank, num_proc, G, ig, res, &rig);
     print_res(rank, res, rig, "G");
+    if(rank == 0)
+    {
+        free(res);
+        res = NULL;
+    }
+    
 }
 
 /**
