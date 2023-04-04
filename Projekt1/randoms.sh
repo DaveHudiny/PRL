@@ -12,10 +12,10 @@ mpic++ --prefix /usr/local/share/OpenMPI -o parsplit parsplit.cpp
 
 
 #vyrobeni souboru s random cisly
-dd if=/dev/random bs=1 count=64 of=numbers
+dd if=/dev/random bs=1 count=32 of=numbers
 
 #spusteni
 mpirun --prefix /usr/local/share/OpenMPI -np $numbers parsplit
 
 #uklid
-rm -f oems # numbers
+rm -f oems numbers
