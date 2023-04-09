@@ -20,9 +20,19 @@ def mess():
 
 
 if __name__ == "__main__":
-    pdf = pd.read_csv("results.txt", sep=' ', index_col="Index")
+    pdf = pd.read_csv("mereni.txt", sep=' ', index_col="Index")
+    cols = pd.MultiIndex.from_tuples([("Measures", i) for i in range(1, 31)])
+    pdf.columns = cols
+
+    ax = sns.lineplot(data=pdf, legend=False)
+    ax.set(xlabel = "Počet prvků/procesorů", ylabel = "Délka běhu [ms]")
+    plt.savefig("convergent_curve.pdf", format="pdf", bbox_inches="tight")
+
+    plt.clf()
     
     pdf = pdf.iloc[::4]
     ax = sns.boxplot(data=pdf.T)
     ax.set(xlabel = "Počet prvků/procesorů", ylabel = "Délka běhu [ms]")
-    plt.show()
+    plt.savefig("behy_skip.pdf", format="pdf", bbox_inches="tight")
+    
+

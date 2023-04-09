@@ -144,7 +144,11 @@ void count_means(int count_sums[], float val_sums[], float means[])
 {
     for(int i = 0; i < CLUSTERS; i++)
     {
-        means[i] = val_sums[i] / count_sums[i];
+        if(count_sums[i] != 0)
+        {
+            means[i] = val_sums[i] / count_sums[i];
+        }
+        else means[i] = 0;
     }
 }
 
@@ -163,12 +167,11 @@ void k_means(float means[], int size_array, int num_proc, int rank, float *array
     bool diff;
 
     // Distribute array of means to other classes
-    MPI_Bcast(means, CLUSTERS, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&size_array, 1, MPI_INT, 0, MPI_COMM_WORLD);
     // Each process obtains 1 value.
     MPI_Scatter(array, 1, MPI_FLOAT, &my_value, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    int my_cluster = 0, new_cluster = 0;
+    int my_cluster = 1, new_cluster = 0;
     int cluster_counts[CLUSTERS] = {}; // Initialize values to zeroes
     float cluster_values[CLUSTERS] = {};
     int *cluster_sums = NULL;
@@ -177,18 +180,22 @@ void k_means(float means[], int size_array, int num_proc, int rank, float *array
     if(rank == 0)
     {
         cluster_sums = (int*)malloc(sizeof(int) * CLUSTERS);
-        cluster_val_sums = (float*)malloc(sizeof(int) * CLUSTERS);
+        cluster_val_sums = (float*)malloc(sizeof(float) * CLUSTERS);
     }
     
     bool any_diff = true;
     int iteration = 0;
 
+    new_cluster_values(cluster_counts, cluster_values, my_value, 1, 1); // sets initial membership to 1
+
     do // Main cycle of program
     {
+        MPI_Bcast(means, CLUSTERS, MPI_FLOAT, 0, MPI_COMM_WORLD);
         new_cluster = get_kmeans_class(means, my_value);
         if (my_cluster != new_cluster) // I count cluster membership and it is different then cluster before.
         {
             diff = true;
+            new_cluster_values(cluster_counts, cluster_values, my_value, my_cluster, new_cluster); // Swaps values in arrays
             my_cluster = new_cluster;
         }
         else // The membership is same
@@ -196,19 +203,25 @@ void k_means(float means[], int size_array, int num_proc, int rank, float *array
             diff = false;
         }
         MPI_Allreduce(&diff, &any_diff, 1, MPI_CXX_BOOL, MPI_LOR, MPI_COMM_WORLD); // If there was no difference, stop.
-        new_cluster_values(cluster_counts, cluster_values, my_value, my_cluster, new_cluster); // Swaps values in arrays
+        
         // For process 0 counts cluster_sums (number of points to each class)
         MPI_Reduce(cluster_counts, cluster_sums, CLUSTERS, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); 
         // For process 0 counts cluster_val_sums, which contains sums of values of points by prediction to class
         MPI_Reduce(cluster_values, cluster_val_sums, CLUSTERS, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
         if(rank == 0)
         {
             count_means(cluster_sums, cluster_val_sums, means);
         }
-        MPI_Bcast(means, CLUSTERS, MPI_FLOAT, 0, MPI_COMM_WORLD);
         iteration++;
     } while (any_diff && iteration < MAXITERATIONS);
     gather_results(my_cluster, size_array, array, means, rank);
+    if(rank == 0)
+    {
+        free(cluster_sums);
+        free(cluster_val_sums);
+    }
+    
 }
 
 /**
@@ -262,7 +275,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        float means[CLUSTERS] = {0.0, 0.0, 0.0, 0.0};
+        float means[CLUSTERS] = {};
         k_means(means, 0, size, rank, NULL);
     }
 
